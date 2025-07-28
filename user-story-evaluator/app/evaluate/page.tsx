@@ -1,5 +1,6 @@
 'use client';
 export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import UserStoryBlock from '@/components/UserStoryBlock';
@@ -25,6 +26,8 @@ export default function EvaluatePage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const load = async () => {
       const email = localStorage.getItem('user_email');
       if (!email) {
