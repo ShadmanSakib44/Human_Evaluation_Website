@@ -1,6 +1,5 @@
 'use client';
 export const dynamic = "force-dynamic";
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import UserStoryBlock from '@/components/UserStoryBlock';
@@ -24,90 +23,107 @@ export default function EvaluatePage() {
   const [ratings, setRatings] = useState<number[][][]>([]);
   const [submitted, setSubmitted] = useState<boolean[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (!isClient) return;
 
     const load = async () => {
-      const email = localStorage.getItem('user_email');
-      if (!email) {
-        console.warn('⚠️ No email found in localStorage.');
-        return;
-      }
-
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (userError || !user) {
-        console.error('❌ Error fetching user or user not found:', userError);
-        return;
-      }
-
-      setUserId(user.id);
-
-      const { data: allReviews, error: reviewError } = await supabase
-        .from('reviews')
-        .select('id, text, user_stories(id, story_text, avg_score)')
-        .order('id', { ascending: true });
-
-      if (reviewError) {
-        console.error('❌ Error fetching reviews:', reviewError);
-        return;
-      }
-
-      const { data: rated, error: ratedError } = await supabase
-        .from('ratings')
-        .select('story_id, user_id');
-
-      if (ratedError) {
-        console.error('❌ Error fetching ratings:', ratedError);
-        return;
-      }
-
-      const { data: stories } = await supabase
-        .from('user_stories')
-        .select('id, review_id');
-
-      const storyToReviewMap: Record<string, string> = {};
-      stories?.forEach((s) => {
-        storyToReviewMap[s.id] = s.review_id;
-      });
-
-      const reviewRatingCount: Record<string, number> = {};
-      rated?.forEach((r) => {
-        if (r.user_id === user.id) {
-          const reviewId = storyToReviewMap[r.story_id];
-          if (reviewId) {
-            reviewRatingCount[reviewId] = (reviewRatingCount[reviewId] || 0) + 1;
-          }
+      try {
+        const email = localStorage.getItem('user_email');
+        if (!email) {
+          console.warn('⚠️ No email found in localStorage.');
+          setIsLoading(false);
+          return;
         }
-      });
 
-      const filteredReviews = (allReviews || [])
-        .filter((review) => (reviewRatingCount[review.id] || 0) < 4)
-        .map((review) => {
-          const filteredStories = review.user_stories.filter(
-            (s: UserStory) =>
-              !rated.some((r) => r.user_id === user.id && r.story_id === s.id)
-          );
-          return { ...review, user_stories: filteredStories };
-        })
-        .filter((r) => r.user_stories.length > 0);
+        const { data: user, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .single();
 
-      setReviews(filteredReviews);
-      setRatings(
-        filteredReviews.map((review) =>
-          review.user_stories.map(() => [0, 0, 0, 0])
-        )
-      );
-      setSubmitted(filteredReviews.map(() => false));
+        if (userError || !user) {
+          console.error('❌ Error fetching user or user not found:', userError);
+          setIsLoading(false);
+          return;
+        }
+
+        setUserId(user.id);
+
+        const { data: allReviews, error: reviewError } = await supabase
+          .from('reviews')
+          .select('id, text, user_stories(id, story_text, avg_score)')
+          .order('id', { ascending: true });
+
+        if (reviewError) {
+          console.error('❌ Error fetching reviews:', reviewError);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: rated, error: ratedError } = await supabase
+          .from('ratings')
+          .select('story_id, user_id');
+
+        if (ratedError) {
+          console.error('❌ Error fetching ratings:', ratedError);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: stories } = await supabase
+          .from('user_stories')
+          .select('id, review_id');
+
+        const storyToReviewMap: Record<string, string> = {};
+        stories?.forEach((s) => {
+          storyToReviewMap[s.id] = s.review_id;
+        });
+
+        const reviewRatingCount: Record<string, number> = {};
+        rated?.forEach((r) => {
+          if (r.user_id === user.id) {
+            const reviewId = storyToReviewMap[r.story_id];
+            if (reviewId) {
+              reviewRatingCount[reviewId] = (reviewRatingCount[reviewId] || 0) + 1;
+            }
+          }
+        });
+
+        const filteredReviews = (allReviews || [])
+          .filter((review) => (reviewRatingCount[review.id] || 0) < 4)
+          .map((review) => {
+            const filteredStories = review.user_stories.filter(
+              (s: UserStory) =>
+                !rated.some((r) => r.user_id === user.id && r.story_id === s.id)
+            );
+            return { ...review, user_stories: filteredStories };
+          })
+          .filter((r) => r.user_stories.length > 0);
+
+        setReviews(filteredReviews);
+        setRatings(
+          filteredReviews.map((review) =>
+            review.user_stories.map(() => [0, 0, 0, 0])
+          )
+        );
+        setSubmitted(filteredReviews.map(() => false));
+      } catch (error) {
+        console.error('❌ Error in load function:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     load();
-  }, []);
+  }, [isClient]);
 
   const allRated =
     reviews.length > 0 &&
@@ -142,6 +158,7 @@ export default function EvaluatePage() {
       const story = review.user_stories[i];
       const [readability, understandability, specifyability, technicalAspects] =
         reviewRatings[i];
+
       const avgScore =
         (readability + understandability + specifyability + technicalAspects) / 4;
 
@@ -190,9 +207,20 @@ export default function EvaluatePage() {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
 
   const handleLogout = () => {
-    localStorage.removeItem('user_email');
-    window.location.href = '/register';
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user_email');
+      window.location.href = '/register';
+    }
   };
+
+  // Show loading state
+  if (!isClient || isLoading) {
+    return (
+      <div className="text-center p-10">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (reviews.length === 0) {
     return (
@@ -214,7 +242,6 @@ export default function EvaluatePage() {
     <div className="p-8">
       <h2 className="text-xl font-bold mb-4">App Review</h2>
       <p className="mb-6">{currentReview.text}</p>
-
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {currentReview.user_stories.map((story, storyIdx) => (
           <UserStoryBlock
@@ -227,7 +254,6 @@ export default function EvaluatePage() {
           />
         ))}
       </div>
-
       <div className="flex justify-between mt-6">
         <button
           onClick={prevReview}
@@ -236,7 +262,6 @@ export default function EvaluatePage() {
         >
           Previous
         </button>
-
         <button
           onClick={submitRatings}
           disabled={!allRated || submitted[currentIndex]}
