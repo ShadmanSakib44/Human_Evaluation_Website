@@ -1,14 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-let supabaseInstance = null;
+let supabaseInstance: SupabaseClient | null = null;
 
-const createSupabaseClient = () => {
+const createSupabaseClient = (): SupabaseClient => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables');
-    // Return a mock client for build time
+    // Return mock client
     if (typeof window === 'undefined') {
       return {
         from: () => ({
@@ -20,8 +20,8 @@ const createSupabaseClient = () => {
           }),
           insert: () => Promise.resolve({ data: null, error: null }),
           update: () => ({ eq: () => Promise.resolve({ data: null, error: null }) }),
-        })
-      };
+        }),
+      } as unknown as SupabaseClient; // 👈 Fake client cast
     }
     throw new Error('Missing Supabase environment variables');
   }
@@ -29,17 +29,16 @@ const createSupabaseClient = () => {
   return createClient(supabaseUrl, supabaseAnonKey);
 };
 
-export const getSupabaseClient = () => {
+export const getSupabaseClient = (): SupabaseClient => {
   if (!supabaseInstance) {
     supabaseInstance = createSupabaseClient();
   }
   return supabaseInstance;
 };
 
-// Create a proxy object that delegates to getSupabaseClient()
-export const supabase = new Proxy({}, {
-  get(target, prop) {
+export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(target, prop, receiver) {
     const client = getSupabaseClient();
-    return client[prop];
+    return Reflect.get(client, prop, receiver);
   }
 });
