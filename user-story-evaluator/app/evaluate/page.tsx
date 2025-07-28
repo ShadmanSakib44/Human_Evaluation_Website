@@ -54,28 +54,6 @@ export default function EvaluatePage() {
         return;
       }
 
-      // const { data: userRatings, error: ratingsError } = await supabase
-      //   .from('ratings')
-      //   .select('story_id')
-      //   .eq('user_id', user.id);
-
-      // if (ratingsError) {
-      //   console.error('❌ Error fetching user ratings:', ratingsError);
-      //   return;
-      // }
-
-      // const ratedStoryIds = userRatings?.map((r) => r.story_id) || [];
-
-      // const filteredReviews = (allReviews || [])
-      //   .map((review) => {
-      //     const filteredStories = review.user_stories.filter(
-      //       (s: UserStory) => !ratedStoryIds.includes(s.id)
-      //     );
-      //     return { ...review, user_stories: filteredStories };
-      //   })
-      //   .filter((r) => r.user_stories.length > 0);
-
-      // Fetch all ratings
       const { data: rated, error: ratedError } = await supabase
         .from('ratings')
         .select('story_id, user_id');
@@ -85,7 +63,6 @@ export default function EvaluatePage() {
         return;
       }
 
-      // Map story_id to review_id
       const { data: stories } = await supabase
         .from('user_stories')
         .select('id, review_id');
@@ -95,7 +72,6 @@ export default function EvaluatePage() {
         storyToReviewMap[s.id] = s.review_id;
       });
 
-      // Count how many stories this user rated per review
       const reviewRatingCount: Record<string, number> = {};
       rated?.forEach((r) => {
         if (r.user_id === user.id) {
@@ -106,7 +82,6 @@ export default function EvaluatePage() {
         }
       });
 
-      // Filter reviews where this user has rated < 4 stories
       const filteredReviews = (allReviews || [])
         .filter((review) => (reviewRatingCount[review.id] || 0) < 4)
         .map((review) => {
@@ -117,7 +92,6 @@ export default function EvaluatePage() {
           return { ...review, user_stories: filteredStories };
         })
         .filter((r) => r.user_stories.length > 0);
-
 
       setReviews(filteredReviews);
       setRatings(
@@ -131,18 +105,11 @@ export default function EvaluatePage() {
     load();
   }, []);
 
-  // Check if all stories have been rated (no zeros)
-  // const allRated =
-  //   reviews.length > 0 &&
-  //   ratings[currentIndex].every((storyRatings) =>
-  //     storyRatings.every((val) => val > 0)
-  //   );
   const allRated =
-  reviews.length > 0 &&
-  ratings[currentIndex]?.every((storyRatings) =>
-    storyRatings.every((val) => val > 0)
-  );
-
+    reviews.length > 0 &&
+    ratings[currentIndex]?.every((storyRatings) =>
+      storyRatings.every((val) => val > 0)
+    );
 
   const handleRatingChange = (
     storyIdx: number,
@@ -201,14 +168,12 @@ export default function EvaluatePage() {
       }
     }
 
-    // Mark this review as submitted
     setSubmitted((prev) => {
       const updated = [...prev];
       updated[currentIndex] = true;
       return updated;
     });
 
-    // Move to next review or finish
     if (currentIndex < reviews.length - 1) {
       setCurrentIndex((prev) => prev + 1);
     } else {
@@ -219,8 +184,6 @@ export default function EvaluatePage() {
 
   const prevReview = () =>
     setCurrentIndex((prev) => Math.max(0, prev - 1));
-  const nextReview = () =>
-    setCurrentIndex((prev) => Math.min(reviews.length - 1, prev + 1));
 
   const handleLogout = () => {
     localStorage.removeItem('user_email');
@@ -277,14 +240,6 @@ export default function EvaluatePage() {
         >
           {submitted[currentIndex] ? 'Submitted' : 'Submit'}
         </button>
-
-        {/* <button
-          onClick={nextReview}
-          disabled={!submitted[currentIndex] || currentIndex === reviews.length - 1}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          Next
-        </button> */}
       </div>
     </div>
   );
