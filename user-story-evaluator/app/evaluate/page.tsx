@@ -504,8 +504,8 @@ export default function EvaluatePage() {
     }
   };
 
-  const prevReview = () =>
-    setCurrentIndex((prev) => Math.max(0, prev - 1));
+  // const prevReview = () =>
+  //   setCurrentIndex((prev) => Math.max(0, prev - 1));
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
