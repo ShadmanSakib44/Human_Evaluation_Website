@@ -608,6 +608,14 @@ export default function EvaluatePage() {
         </div>
       </Dialog>
 
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Logout
+        </button>
+      </div>
 
       <h2 className="text-xl font-bold mb-4">App Review {currentIndex + 1}</h2>
 
@@ -624,7 +632,7 @@ export default function EvaluatePage() {
           />
         ))}
       </div>
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-center mt-6">
         {/* <button
           onClick={prevReview}
           disabled={currentIndex === 0}
@@ -632,12 +640,12 @@ export default function EvaluatePage() {
         >
           Previous
         </button> */}
-        <button
+        {/* <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-600 text-white rounded"
         >
           Logout
-        </button>
+        </button> */}
 
         <button
           onClick={submitRatings}
