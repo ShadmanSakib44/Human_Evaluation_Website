@@ -550,22 +550,6 @@ export default function EvaluatePage() {
 
   return (
     <div className="p-8">
-      {/* <Dialog open={showModal} onClose={() => {}} as={Fragment}>
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded max-w-md w-full">
-            <h2 className="text-lg font-bold mb-4">Tell us about yourself</h2>
-            <form onSubmit={handleDemographicSubmit} className="space-y-4">
-              <input name="company" placeholder="Company" required className="w-full p-2 border" onChange={(e) => setDemographics({ ...demographics, company: e.target.value })} />
-              <input name="designation" placeholder="Designation" required className="w-full p-2 border" onChange={(e) => setDemographics({ ...demographics, designation: e.target.value })} />
-              <input name="experience" placeholder="Years of Experience" type="number" required className="w-full p-2 border" onChange={(e) => setDemographics({ ...demographics, experience: e.target.value })} />
-              <input name="agile_experience" placeholder="Agile Experience (Y/N)" required className="w-full p-2 border" onChange={(e) => setDemographics({ ...demographics, agile_experience: e.target.value })} />
-              <input name="familiarity" placeholder="Familiarity with App Reviews & Feedback" required className="w-full p-2 border" onChange={(e) => setDemographics({ ...demographics, familiarity: e.target.value })} />
-              <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded">Submit</button>
-            </form>
-          </div>
-        </div>
-      </Dialog> */}
-
       <Dialog open={showModal} onClose={() => {}} as={Fragment}>
         <div className="fixed inset-0 flex justify-center items-center z-50 modal-backdrop">
           <div className="modal-content">
@@ -625,7 +609,8 @@ export default function EvaluatePage() {
       </Dialog>
 
 
-      <h2 className="text-xl font-bold mb-4">App Review</h2>
+      <h2 className="text-xl font-bold mb-4">App Review {currentIndex + 1}</h2>
+
       <p className="mb-6">{currentReview.text}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {currentReview.user_stories.map((story, storyIdx) => (
@@ -640,13 +625,20 @@ export default function EvaluatePage() {
         ))}
       </div>
       <div className="flex justify-between mt-6">
-        <button
+        {/* <button
           onClick={prevReview}
           disabled={currentIndex === 0}
           className="px-4 py-2 bg-gray-300 text-black rounded"
         >
           Previous
+        </button> */}
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Logout
         </button>
+
         <button
           onClick={submitRatings}
           disabled={!allRated || submitted[currentIndex]}
