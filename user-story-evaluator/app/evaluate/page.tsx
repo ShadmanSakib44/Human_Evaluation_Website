@@ -15,9 +15,14 @@ interface UserStory {
 
 interface Review {
   id: string;
-  serial_no: number | null; // ✅ add this
+  serial_no: number | null;
   text: string;
   user_stories: UserStory[];
+}
+
+interface StoryRef {
+  id: string;
+  review_id: string | null; // adjust if NOT NULL in DB
 }
 
 export default function EvaluatePage() {
@@ -78,11 +83,11 @@ export default function EvaluatePage() {
           setShowModal(true);
         }
 
-        // ✅ fetch serial_no and order by it
+        // ✅ fetch serial_no and order by it (with null handling)
         const { data: allReviews, error: reviewError } = await supabase
           .from('reviews')
           .select('id, serial_no, text, user_stories(id, story_text, avg_score)')
-          .order('serial_no', { ascending: true })
+          .order('serial_no', { ascending: true, nullsFirst: false })
           .order('id', { ascending: true });
 
         if (reviewError) {
@@ -106,9 +111,8 @@ export default function EvaluatePage() {
           .select('id, review_id');
 
         const storyToReviewMap: Record<string, string> = {};
-        stories?.forEach((s) => {
-          // @ts-ignore review_id exists on user_stories
-          storyToReviewMap[s.id] = s.review_id;
+        (stories as StoryRef[] | null)?.forEach((s) => {
+          if (s.review_id) storyToReviewMap[s.id] = s.review_id;
         });
 
         const reviewRatingCount: Record<string, number> = {};
@@ -232,7 +236,10 @@ export default function EvaluatePage() {
   const handleDemographicSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = localStorage.getItem('user_email');
-    const { error } = await supabase.from('users').update(demographics).eq('email', email);
+    const { error } = await supabase
+      .from('users')
+      .update(demographics)
+      .eq('email', email);
     if (!error) setShowModal(false);
   };
 
@@ -327,7 +334,7 @@ export default function EvaluatePage() {
           onClick={handleLogout}
           className="px-4 py-2 bg-red-600 text-white rounded"
         >
-        Logout
+          Logout
         </button>
       </div>
 
